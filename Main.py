@@ -9,6 +9,7 @@ import os
 # Mesmo deixando a imagem perfeita para identificacao nas imagens 9 , 30 , 1, 13, 5, image4, 18, 21
 #o algoritimo do EasyOCR nao consegue identificar as placas corretamente na maioria das vezes
 #tentamos utilizar o Tesseract, mas o resultado foi ainda pior
+
 def find_Plate(img):
     # Ler a imagem, converter para escala de cinza e aplicar desfoque
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
