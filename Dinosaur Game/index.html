@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downasaur Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f7f7f7;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <audio id="failSound" src="sound/fail.flac"></audio>
+    <audio id="ambientSound" src="sound/batidao.wav" autoplay="true"></audio>
+    <canvas id="gameCanvas" width="800" height="200"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>
