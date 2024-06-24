@@ -1,134 +1,150 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const ambientSound = document.getElementById('ambientSound');
-const failSound = document.getElementById('failSound');
 
-// Variáveis do jogo
-let dino = {
+let mamaco = {
     x: 50,
-    y: 150,
-    width: 20,
-    height: 40,
-    dy: 0,
-    jumpStrength: 10,
-    gravity: 0.5,
-    grounded: false
+    y: canvas.height / 2, // Altura inicial centralizada verticalmente
+    width: 50,
+    height: 50,
+    yVelocity: 0,
+    jumpPower: -10,
+    gravity: 0.3,
+    isJumping: false,
+    frame: 0
 };
 
 let obstacles = [];
-let gameSpeed = 5;
+let frames = 0;
 let score = 0;
+let gameOver = false;
 
-// Função para desenhar o dinossauro
-function drawDino() {
-    ctx.fillStyle = 'green';
-    ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
-}
+// Carregar sons
+const jumpSound = new Audio('sound/pulo.wav');
+const collisionSound = new Audio('sound/scurrega.mp3');
 
-// Função para desenhar obstáculos
-function drawObstacles() {
-    ctx.fillStyle = 'red';
-    obstacles.forEach(obstacle => {
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-    });
-}
+// Carregar as imagens do mamaco e leão
+const mamacoRun1 = new Image();
+mamacoRun1.src = './images/mamaco_andando1.png';
 
-function randomIntFromRange(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
+const mamacoRun2 = new Image();
+mamacoRun2.src = './images/mamaco_andando2.png';
 
-// Função para atualizar obstáculos
-function updateObstacles() {
-    obstacles.forEach(obstacle => {
-        obstacle.x -= gameSpeed;
-    });
+const mamacoJump = new Image();
+mamacoJump.src = './images/mamaco_pulo.png';
 
-    if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - 200) {
-        let obstacle = {
-            x: canvas.width,
-            y: 160,
-            width: randomIntFromRange(20, 40),
-            height: randomIntFromRange(20, 40)
-        };
-        obstacles.push(obstacle);
-    }
+const lionImage = new Image();
+lionImage.src = './images/leao.png';
 
-    if (obstacles[0].x + obstacles[0].width < 0) {
-        obstacles.shift();
-        score++;
-    }
-}
-
-// Função para detectar colisão
-function detectCollision() {
-    obstacles.forEach(obstacle => {
-        if (
-            dino.x < obstacle.x + obstacle.width &&
-            dino.x + dino.width > obstacle.x &&
-            dino.y < obstacle.y + obstacle.height &&
-            dino.y + dino.height > obstacle.y
-        ) {
-            // Colisão detectada
-            ambientSound.pause();
-            failSound.play();
-            alert('Game Over! Score: ' + score);
-            document.location.reload();
-        }
-    });
-}
-
-// Função para atualizar o dinossauro
-function updateDino() {
-    if (dino.grounded && dino.dy === 0 && isJumping) {
-        dino.dy = -dino.jumpStrength;
-        dino.grounded = false;
-    }
-
-    dino.dy += dino.gravity;
-    dino.y += dino.dy;
-
-    if (dino.y + dino.height > canvas.height - 10) {
-        dino.y = canvas.height - 10 - dino.height;
-        dino.dy = 0;
-        dino.grounded = true;
-    }
-}
-
-// Variável para detectar se o jogador está tentando pular
-let isJumping = false;
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        isJumping = true;
+// Adicionar listener para eventos de tecla
+document.addEventListener('keydown', (event) => {
+    if (!gameOver && event.code === 'Space' && !mamaco.isJumping) {
+        mamaco.yVelocity = mamaco.jumpPower;
+        mamaco.isJumping = true;
+        jumpSound.play();
     }
 });
 
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        isJumping = false;
-    }
-});
+// Função para reiniciar o jogo
+function restartGame() {
+    mamaco = {
+        x: 50,
+        y: canvas.height / 2, // Altura inicial centralizada verticalmente
+        width: 50,
+        height: 50,
+        yVelocity: 0,
+        jumpPower: -10,
+        gravity: 0.3,
+        isJumping: false,
+        frame: 0
+    };
+    obstacles = [];
+    frames = 0;
+    score = 0;
+    gameOver = false;
+    update();
+}
 
-// Função para desenhar o jogo
-function draw() {
+// Função principal de atualização do jogo
+function update() {
+    frames++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    drawDino();
-    drawObstacles();
+    // Física do mamaco
+    mamaco.y += mamaco.yVelocity;
+    mamaco.yVelocity += mamaco.gravity;
+    if (mamaco.y > 150) {
+        mamaco.y = 150;
+        mamaco.isJumping = false;
+    }
+
+    // Atualizar quadro para a animação do sprite de corrida
+    if (!mamaco.isJumping && frames % 10 === 0) {
+        mamaco.frame = (mamaco.frame + 1) % 2;
+    }
+
+    // Desenhar o mamaco
+    if (mamaco.isJumping) {
+        ctx.drawImage(mamacoJump, mamaco.x, mamaco.y, mamaco.width, mamaco.height);
+    } else {
+        if (mamaco.frame === 0) {
+            ctx.drawImage(mamacoRun1, mamaco.x, mamaco.y, mamaco.width, mamaco.height);
+        } else {
+            ctx.drawImage(mamacoRun2, mamaco.x, mamaco.y, mamaco.width, mamaco.height);
+        }
+    }
+
+    // Gerenciar obstáculos
+    if (frames % 100 === 0) {
+        obstacles.push({
+            x: canvas.width,
+            y: canvas.height / 2, // Altura inicial centralizada verticalmente
+            width: 100,
+            height: 50,
+        });
+    }
+
+    obstacles.forEach((obstacle, index) => {
+        obstacle.x -= 5;
+        if (obstacle.x + obstacle.width < 0) {
+            obstacles.splice(index, 1);
+            score++;
+        }
+
+        // Desenhar obstáculo (leão)
+        ctx.drawImage(lionImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+        // Detecção de colisão
+        if (
+            mamaco.x < obstacle.x + obstacle.width &&
+            mamaco.x + mamaco.width > obstacle.x &&
+            mamaco.y < obstacle.y + obstacle.height &&
+            mamaco.y + mamaco.height > obstacle.y
+        ) {
+            collisionSound.play();
+            gameOver = true;
+            setTimeout(() => {
+                restartGame();
+            }, 5000); // Tempo de espera em milissegundos antes de reiniciar
+        }
+    });
+
+    // Desenhar pontuação
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Arial';
+    ctx.fillText('Score: ' + score, 700, 20);
+
+    // Verificar se o jogo ainda está em andamento
+    if (!gameOver) {
+        requestAnimationFrame(update);
+    } else {
+        // Mostrar tela de Game Over
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.font = '30px Arial';
+        ctx.fillText('Game Over! Score: ' + score, canvas.width / 2 - 150, canvas.height / 2);
+    }
 }
 
-// Função para atualizar o jogo
-function update() {
-    updateDino();
-    updateObstacles();
-    detectCollision();
-}
-
-// Função principal do jogo
-function gameLoop() {
-    draw();
-    update();
-    requestAnimationFrame(gameLoop);
-}
-
-// Iniciar o loop do jogo
-gameLoop();
+// Iniciar o jogo
+update();
